@@ -1,0 +1,1 @@
+Set-based generative modeling of particle jets.
