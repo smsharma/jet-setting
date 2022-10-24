@@ -31,9 +31,9 @@ def attention(query, key, value, n_heads=1, mask_diagonal=False, mask=None):
     key = key.view(*value_shape, n_heads, D // n_heads).transpose(-2, -3)
 
     att = query @ key.transpose(-1, -2) * (1 / key.shape[-1])**0.5
-
+    
     if mask_diagonal:
-        att.masked_fill_(torch.eye(att.shape[-1]).bool(), -np.inf)
+        att.masked_fill_(torch.eye(att.shape[-1]).to(att).bool(), -np.inf)
     if mask is not None:
         att_mask = 1 - mask.transpose(-1, -2).unsqueeze(-2).repeat_interleave(att.shape[-2], dim=-2)
         att.masked_fill_(att_mask.bool(), -np.inf)
