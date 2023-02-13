@@ -19,9 +19,9 @@ class DiffeqExactTrace(nn.Module):
         self.dimwise_net = dimwise_net
         self.return_log_det_jac = return_log_det_jac
 
-    def forward(self, t, x, latent=None, **kwargs):
+    def forward(self, t, x, latent=None, mask=None, **kwargs):
         params = st.util.flatten_params(self.exclusive_net, self.dimwise_net)
-        y, jac = st.net.FuncAndDiagJac.apply(self.exclusive_net, self.dimwise_net, t, x, latent, params)
+        y, jac = st.net.FuncAndDiagJac.apply(self.exclusive_net, self.dimwise_net, t, x, latent, params, mask)
         return (y, jac) if self.return_log_det_jac else y
 
 
