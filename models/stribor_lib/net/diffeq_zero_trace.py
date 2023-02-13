@@ -158,6 +158,10 @@ class DiffeqZeroTraceAttention(nn.Module):
                 
         # if mask is None:
         #     mask = torch.ones(*x.shape[:-1], 1).to(x)
+        
+        # (B, N, D) -> (B, D, N, H)
+        if mask is not None:
+            mask = mask.unsqueeze(-3).repeat_interleave(3, dim=-3)
 
         y = st.net.attention(query, key, value, self.n_heads, True, mask) # (B, D, N, H)
         y = y.transpose(-2, -3) # (B, N, D, H)
