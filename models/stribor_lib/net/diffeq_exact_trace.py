@@ -75,7 +75,7 @@ class DiffeqExactTraceAttention(DiffeqExactTrace):
         n_heads (int, optional): Number of attention heads. Default: 1
         return_log_det_jac (bool, optional): Whether to return log-Jacobian diagonal. Default: True
     """
-    def __init__(self, in_dim, hidden_dims, out_dim, d_h, latent_dim=0, n_heads=1, return_log_det_jac=True, **kwargs):
-        exclusive_net = st.net.DiffeqZeroTraceAttention(in_dim, hidden_dims, d_h * out_dim, n_heads, return_log_det_jac=False)
+    def __init__(self, in_dim, hidden_dims, out_dim, d_h, latent_dim=0, n_heads=1, return_log_det_jac=True, diffeqblocks=False, **kwargs):
+        exclusive_net = st.net.DiffeqZeroTraceAttention(in_dim, hidden_dims, d_h * out_dim, n_heads, return_log_det_jac=False, diffeqblocks=diffeqblocks)
         dimwise_net = st.net.DiffeqMLP(d_h + latent_dim + 2, hidden_dims, 1)
         super().__init__(exclusive_net, dimwise_net, return_log_det_jac)
