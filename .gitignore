@@ -1,5 +1,7 @@
 data/*.hdf5
 lightning_logs
+checkpoints
+logs
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

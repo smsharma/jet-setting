@@ -24,7 +24,7 @@ class FuncAndDiagJac(torch.autograd.Function):
     """
 
     @staticmethod
-    def forward(ctx, exclusive_net, dimwise_net, t, x, latent, flat_params, order=1):
+    def forward(ctx, exclusive_net, dimwise_net, t, x, latent, flat_params, mask=None, order=1):
         ctx.exclusive_net = exclusive_net
         ctx.dimwise_net = dimwise_net
         shape = x.shape
@@ -35,7 +35,7 @@ class FuncAndDiagJac(torch.autograd.Function):
             if latent is not None:
                 latent = latent.detach().requires_grad_(True)
                         
-            h = exclusive_net(t, x, latent=latent)
+            h = exclusive_net(t, x, mask=mask, latent=latent)
                         
             x_ = x.view(-1, 1)
             h = h.contiguous().view(x_.shape[0], -1)
@@ -90,7 +90,7 @@ class FuncAndDiagJac(torch.autograd.Function):
             grad_x = grad_x + grad_x_from_h
             grad_flat_params = grad_flat_params + flatten_convert_none_to_zeros(grad_params_from_h, f_params)
 
-        return None, None, grad_t, grad_x, grad_latent, grad_flat_params
+        return None, None, grad_t, grad_x, grad_latent, grad_flat_params, None
 
 def safe_detach(tensor):
     return tensor.detach().requires_grad_(tensor.requires_grad)

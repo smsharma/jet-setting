@@ -140,27 +140,44 @@ class DiffeqZeroTraceAttention(nn.Module):
         return_log_det_jac (bool, optional): Whether to return the log-Jacobian
             diagonal values (always zero). Default: True
     """
-    def __init__(self, in_dim, hidden_dims, out_dim, n_heads=1, return_log_det_jac=True, **kwargs):
+    def __init__(self, in_dim, hidden_dims, out_dim, n_heads=1, return_log_det_jac=True, diffeqmlps=False, **kwargs):
         super().__init__()
         self.n_heads = n_heads
         self.return_log_det_jac = return_log_det_jac
+        self.diffeqmlps = diffeqmlps
 
         self.q = st.net.MADE(in_dim, hidden_dims[:-1], hidden_dims[-1] * in_dim, return_per_dim=True)
-        self.k = st.net.MLP(in_dim, hidden_dims[:-1], hidden_dims[-1])
-        self.v = st.net.MLP(in_dim, hidden_dims[:-1], hidden_dims[-1], return_per_dim=True)
-        self.proj = st.net.MLP(hidden_dims[-1], [], out_dim // in_dim)
+        if self.diffeqmlps:
+            self.k = st.net.DiffeqMLP(in_dim + 1, hidden_dims[:-1], hidden_dims[-1])
+            self.v = st.net.DiffeqMLP(in_dim + 1, hidden_dims[:-1], hidden_dims[-1], return_per_dim=True)
+            self.proj = st.net.DiffeqMLP(hidden_dims[-1] + 1, [], out_dim // in_dim)
+        else:
+            self.k = st.net.MLP(in_dim, hidden_dims[:-1], hidden_dims[-1])
+            self.v = st.net.MLP(in_dim, hidden_dims[:-1], hidden_dims[-1], return_per_dim=True)
+            self.proj = st.net.MLP(hidden_dims[-1], [], out_dim // in_dim)
 
     def forward(self, t, x, mask=None, **kwargs):
         query = self.q(x).transpose(-2, -3) # (B, N, D) -> (B, D, N, H)
         # value = self.v(x).transpose(-2, -3)
-        key = self.k(x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
-        value = self.v(x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
-                
+        if self.diffeqmlps:
+            key = self.k(t,x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
+            value = self.v(t,x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
+        else:
+            key = self.k(x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
+            value = self.v(x).unsqueeze(-2).repeat_interleave(x.shape[-1], dim=-2).transpose(-2, -3) # (B, D, N, H)
+                    
         # if mask is None:
         #     mask = torch.ones(*x.shape[:-1], 1).to(x)
+        
+        # (B, N, D) -> (B, D, N, H)
+        if mask is not None:
+            mask = mask.unsqueeze(-3).repeat_interleave(3, dim=-3)
 
         y = st.net.attention(query, key, value, self.n_heads, True, mask) # (B, D, N, H)
         y = y.transpose(-2, -3) # (B, N, D, H)
-        y = self.proj(y).view(*y.shape[:-2], -1) # (B, N, D, O) -> (B, N, D * O)
+        if self.diffeqmlps:
+            y = self.proj(t,y).view(*y.shape[:-2], -1) # (B, N, D, O) -> (B, N, D * O)
+        else:
+            y = self.proj(y).view(*y.shape[:-2], -1) # (B, N, D, O) -> (B, N, D * O)
 
         return (y, torch.zeros_like(x)) if self.return_log_det_jac else y
