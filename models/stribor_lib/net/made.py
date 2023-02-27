@@ -39,7 +39,7 @@ class MADE(nn.Module):
         return_per_dim: Whether to return in (..., in_dim, out_dim / in_dim) format,
             otherwise returns (..., out_dim). Default: False
     """
-    def __init__(self, in_dim, hidden_dims, out_dim, context_dim=None, activation='Tanh', final_activation=None,
+    def __init__(self, in_dim, hidden_dims, out_dim, context_dim=None, activation='GELU', final_activation=None,
                  num_masks=1, natural_ordering=False, reverse_ordering=False, return_per_dim=False, **kwargs):
         super().__init__()
         self.in_dim = in_dim

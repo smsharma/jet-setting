@@ -21,7 +21,7 @@ class MLP(nn.Module):
         wrapper_func (callable, optional): Wrapper function for `nn.Linear`,
             e.g. st.util.spectral_norm. Default: None
     """
-    def __init__(self, in_dim, hidden_dims, out_dim, activation='Tanh',
+    def __init__(self, in_dim, hidden_dims, out_dim, activation='GELU',
                  final_activation=None, wrapper_func=None, **kwargs):
         super().__init__()
 
